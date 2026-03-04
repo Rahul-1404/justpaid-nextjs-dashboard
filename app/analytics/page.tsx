@@ -223,47 +223,75 @@ export default async function AnalyticsPage() {
       {/* MONTHLY TIMELINE                                          */}
       {/* ═══════════════════════════════════════════════════════════ */}
       <div className="card" style={{ marginBottom: "2rem" }}>
-        <div className="section-title"><BarChart3 size={16} /> Monthly Timeline</div>
-        <p style={{ fontSize: "0.75rem", color: "#71717a", margin: "-0.5rem 0 1.2rem", lineHeight: 1.6 }}>
-          Each bar shows total views for that month (blue) with the engagement rate overlaid (green dot). The dotted line at Dec marks the transition from early content to the current strategy. Notice how engagement improved significantly after December despite lower raw view counts — a sign the content is resonating better with a more targeted audience.
+        <div className="section-title"><BarChart3 size={16} /> Monthly Performance</div>
+        <p style={{ fontSize: "0.75rem", color: "#71717a", margin: "-0.5rem 0 1.25rem", lineHeight: 1.6 }}>
+          Total views and engagement rate for each month across all platforms. Higher bars = more views. Color intensity indicates engagement quality.
         </p>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: "0.25rem", height: 200, padding: "0 0.5rem" }}>
-          {monthlyAgg.map((m: MonthlyAgg, i: number) => {
-            const viewPct = Number(m.views) / maxMonthViews * 100;
-            const engPct = Number(m.avg_engagement) / maxMonthEng * 100;
-            const isDecBorder = m.month === "2025-11"; // show border after Nov
-            return (
-              <div key={m.month} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem", position: "relative", borderRight: isDecBorder ? "2px dashed rgba(99,102,241,0.3)" : undefined, paddingRight: isDecBorder ? "0.25rem" : undefined }}>
-                {/* Engagement dot */}
-                <div style={{ position: "absolute", bottom: `${engPct}%`, width: 8, height: 8, borderRadius: "50%", background: "#22c55e", border: "2px solid #0a0a0c", zIndex: 2 }} title={`${m.avg_engagement}% engagement`} />
-                {/* View bar */}
-                <div style={{
-                  width: "100%", maxWidth: 48, borderRadius: "4px 4px 0 0",
-                  height: `${Math.max(viewPct, 2)}%`,
-                  background: m.month >= "2025-12" ? "rgba(99,102,241,0.5)" : "rgba(234,179,8,0.35)",
-                  position: "relative",
-                }}>
-                  <div style={{ position: "absolute", top: -18, width: "100%", textAlign: "center", fontSize: "0.55rem", fontWeight: 600, color: "#71717a", whiteSpace: "nowrap" }}>
+
+        {/* Bar chart with Y-axis */}
+        <div style={{ display: "flex", gap: 0 }}>
+          {/* Y-axis labels */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: 200, paddingRight: "0.5rem", paddingBottom: "0.2rem" }}>
+            <div style={{ fontSize: "0.55rem", color: "#52525b", textAlign: "right", whiteSpace: "nowrap" }}>{fmt(maxMonthViews)}</div>
+            <div style={{ fontSize: "0.55rem", color: "#52525b", textAlign: "right", whiteSpace: "nowrap" }}>{fmt(Math.round(maxMonthViews / 2))}</div>
+            <div style={{ fontSize: "0.55rem", color: "#52525b", textAlign: "right" }}>0</div>
+          </div>
+
+          {/* Bars */}
+          <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: "0.4rem", height: 200, borderLeft: "1px solid #27272a", borderBottom: "1px solid #27272a", paddingLeft: "0.5rem", paddingBottom: 0, position: "relative" }}>
+            {/* Gridlines */}
+            <div style={{ position: "absolute", left: 0, right: 0, top: 0, borderTop: "1px solid #1a1a1e" }} />
+            <div style={{ position: "absolute", left: 0, right: 0, top: "50%", borderTop: "1px solid #1a1a1e" }} />
+
+            {monthlyAgg.map((m: MonthlyAgg) => {
+              const viewPct = Number(m.views) / maxMonthViews * 100;
+              const eng = Number(m.avg_engagement);
+              const barColor = eng > 3 ? "#6366f1" : eng > 1 ? "rgba(99,102,241,0.65)" : "rgba(99,102,241,0.35)";
+              return (
+                <div key={m.month} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end" }}>
+                  {/* Value on top */}
+                  <div style={{ fontSize: "0.6rem", color: "#a1a1aa", fontWeight: 600, marginBottom: "0.2rem", whiteSpace: "nowrap" }}>
                     {fmt(Number(m.views))}
                   </div>
+                  {/* Bar */}
+                  <div style={{
+                    width: "80%", maxWidth: 56, borderRadius: "6px 6px 0 0",
+                    height: `${Math.max(viewPct, 2)}%`,
+                    background: `linear-gradient(180deg, ${barColor} 0%, ${barColor}60 100%)`,
+                    position: "relative",
+                  }}>
+                    {/* Engagement badge */}
+                    <div style={{
+                      position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)",
+                      fontSize: "0.55rem", fontWeight: 700, whiteSpace: "nowrap",
+                      color: eng > 3 ? "#22c55e" : eng > 1 ? "#eab308" : "#ef4444",
+                    }}>
+                      {eng > 0 ? `${eng}%` : ""}
+                    </div>
+                  </div>
                 </div>
-                {/* Month label */}
-                <div style={{ fontSize: "0.55rem", color: "#52525b", marginTop: "0.2rem", whiteSpace: "nowrap" }}>
-                  {monthLabel(m.month)}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-        <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", marginTop: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.65rem", color: "#71717a" }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: "rgba(234,179,8,0.35)" }} /> Sep–Nov 2025
+
+        {/* X-axis labels */}
+        <div style={{ display: "flex", paddingLeft: "2.5rem" }}>
+          {monthlyAgg.map((m: MonthlyAgg) => (
+            <div key={m.month} style={{ flex: 1, textAlign: "center", paddingTop: "0.4rem" }}>
+              <div style={{ fontSize: "0.62rem", fontWeight: 600, color: "#a1a1aa" }}>{monthLabel(m.month)}</div>
+              <div style={{ fontSize: "0.5rem", color: "#3f3f46" }}>{m.posts} posts</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px solid #1e1e22" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.62rem", color: "#71717a" }}>
+            <div style={{ width: 12, height: 12, borderRadius: 3, background: "rgba(99,102,241,0.5)" }} /> Total Views
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.65rem", color: "#71717a" }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: "rgba(99,102,241,0.5)" }} /> Dec 2025–Mar 2026
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.65rem", color: "#71717a" }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} /> Engagement rate
+          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.62rem", color: "#71717a" }}>
+            <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#22c55e" }}>%</span> Engagement Rate
           </div>
         </div>
       </div>
